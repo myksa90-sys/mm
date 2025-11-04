@@ -1,321 +1,231 @@
 import flet as ft
-from datetime import date
-from calendar import monthrange
-
-PRIMARY_COLOR = "#2563eb"
-SECONDARY_COLOR = "#38bdf8"
-ACCENT_COLOR = "#fb7185"
-NEUTRAL_COLOR = "#64748b"
-
-AR_WEEKDAYS = [
-    "الاثنين",
-    "الثلاثاء",
-    "الأربعاء",
-    "الخميس",
-    "الجمعة",
-    "السبت",
-    "الأحد",
-]
-
-AR_MONTHS = {
-    1: "يناير",
-    2: "فبراير",
-    3: "مارس",
-    4: "أبريل",
-    5: "مايو",
-    6: "يونيو",
-    7: "يوليو",
-    8: "أغسطس",
-    9: "سبتمبر",
-    10: "أكتوبر",
-    11: "نوفمبر",
-    12: "ديسمبر",
-}
-
-GREGORIAN_ZODIAC = [
-    {
-        "name": "الحمل",
-        "start": (3, 21),
-        "end": (4, 19),
-        "element": "النار",
-        "planet": "المريخ",
-        "traits": "حيوي، جريء، يعشق التحديات ويقود المبادرات.",
-    },
-    {
-        "name": "الثور",
-        "start": (4, 20),
-        "end": (5, 20),
-        "element": "الأرض",
-        "planet": "الزهرة",
-        "traits": "صبور، وفيّ، يبحث عن الاستقرار والجمال.",
-    },
-    {
-        "name": "الجوزاء",
-        "start": (5, 21),
-        "end": (6, 20),
-        "element": "الهواء",
-        "planet": "عطارد",
-        "traits": "اجتماعي، فضولي، سريع التعلّم والتفكير.",
-    },
-    {
-        "name": "السرطان",
-        "start": (6, 21),
-        "end": (7, 22),
-        "element": "الماء",
-        "planet": "القمر",
-        "traits": "حساس، ودي، يحمي من يحبهم ويعتني بالتفاصيل.",
-    },
-    {
-        "name": "الأسد",
-        "start": (7, 23),
-        "end": (8, 22),
-        "element": "النار",
-        "planet": "الشمس",
-        "traits": "كاريزمي، قيادي، كريم ويتألق في الأضواء.",
-    },
-    {
-        "name": "العذراء",
-        "start": (8, 23),
-        "end": (9, 22),
-        "element": "الأرض",
-        "planet": "عطارد",
-        "traits": "منظم، عملي، دقيق ويحب خدمة الآخرين.",
-    },
-    {
-        "name": "الميزان",
-        "start": (9, 23),
-        "end": (10, 22),
-        "element": "الهواء",
-        "planet": "الزهرة",
-        "traits": "دبلوماسي، متوازن، يسعى للسلام والانسجام.",
-    },
-    {
-        "name": "العقرب",
-        "start": (10, 23),
-        "end": (11, 21),
-        "element": "الماء",
-        "planet": "بلوتو",
-        "traits": "عميق، شغوف، قوي الإرادة ووفي للغاية.",
-    },
-    {
-        "name": "القوس",
-        "start": (11, 22),
-        "end": (12, 21),
-        "element": "النار",
-        "planet": "المشتري",
-        "traits": "مغامر، صريح، متفائل ومحب للمعرفة.",
-    },
-    {
-        "name": "الجدي",
-        "start": (12, 22),
-        "end": (1, 19),
-        "element": "الأرض",
-        "planet": "زحل",
-        "traits": "طموح، مسؤول، منضبط ويخطط للمستقبل.",
-    },
-    {
-        "name": "الدلو",
-        "start": (1, 20),
-        "end": (2, 18),
-        "element": "الهواء",
-        "planet": "أورانوس",
-        "traits": "مبتكر، إنساني، مستقل ويحب الحرية.",
-    },
-    {
-        "name": "الحوت",
-        "start": (2, 19),
-        "end": (3, 20),
-        "element": "الماء",
-        "planet": "نبتون",
-        "traits": "خيالي، رحيم، يتواصل مع الآخرين بحدسه العالي.",
-    },
-]
-
-CHINESE_ZODIAC = [
-    {"name": "الفأر", "traits": "ذكي، ودود، سريع البديهة."},
-    {"name": "الثور", "traits": "مثابر، عملي، يعتمد عليه."},
-    {"name": "النمر", "traits": "شجاع، ملهم، محب للمغامرة."},
-    {"name": "الأرنب", "traits": "لطيف، حذر، دبلوماسي."},
-    {"name": "التنين", "traits": "طموح، واثق، يمتلك حضورًا قويًا."},
-    {"name": "الثعبان", "traits": "حكيم، متأمل، عميق التفكير."},
-    {"name": "الحصان", "traits": "مفعم بالحيوية، محبوب، نشيط."},
-    {"name": "الماعز", "traits": "مرهف، فني، متعاطف."},
-    {"name": "القرد", "traits": "إبداعي، اجتماعي، مرن."},
-    {"name": "الديك", "traits": "منظم، صريح، دقيق."},
-    {"name": "الكلب", "traits": "مخلص، أمين، حريص."},
-    {"name": "الخنزير", "traits": "كريم، متسامح، محب للحياة."},
-]
-
-def to_arabic_digits(value: object) -> str:
-    return str(value).translate(str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩"))
-
-def format_date_ar(d: date) -> str:
-    weekday = AR_WEEKDAYS[d.weekday()]
-    month = AR_MONTHS[d.month]
-    return f"{weekday}، {to_arabic_digits(d.day)} {month} {to_arabic_digits(d.year)}م"
-
-def safe_birthdate(year: int, month: int, day: int) -> date:
-    last_day = monthrange(year, month)[1]
-    return date(year, month, min(day, last_day))
-
-def calculate_age_details(birth_date: date, today: date | None = None):
-    if today is None:
-        today = date.today()
-    years = today.year - birth_date.year
-    months = today.month - birth_date.month
-    days = today.day - birth_date.day
-
-    if days < 0:
-        prev_month = today.month - 1 or 12
-        prev_year = today.year if today.month != 1 else today.year - 1
-        days += monthrange(prev_year, prev_month)[1]
-        months -= 1
-    if months < 0:
-        years -= 1
-        months += 12
-
-    total_days = (today - birth_date).days
-    total_weeks = total_days // 7
-    total_months = years * 12 + months
-    return {
-        "years": years,
-        "months": months,
-        "days": days,
-        "total_days": total_days,
-        "total_weeks": total_weeks,
-        "total_months": total_months,
-    }
-
-def get_next_birthday(birth_date: date, today: date | None = None) -> date:
-    if today is None:
-        today = date.today()
-    candidate = safe_birthdate(today.year, birth_date.month, birth_date.day)
-    if candidate < today:
-        candidate = safe_birthdate(today.year + 1, birth_date.month, birth_date.day)
-    return candidate
-
-def get_zodiac_info(birth_date: date) -> dict:
-    for record in GREGORIAN_ZODIAC:
-        start_month, start_day = record["start"]
-        end_month, end_day = record["end"]
-        if start_month < end_month or (start_month == end_month and start_day <= end_day):
-            in_range = (
-                (birth_date.month > start_month or (birth_date.month == start_month and birth_date.day >= start_day))
-                and (birth_date.month < end_month or (birth_date.month == end_month and birth_date.day <= end_day))
-            )
-        else:
-            in_range = (
-                birth_date.month > start_month
-                or (birth_date.month == start_month and birth_date.day >= start_day)
-                or birth_date.month < end_month
-                or (birth_date.month == end_month and birth_date.day <= end_day)
-            )
-        if in_range:
-            return record
-    return GREGORIAN_ZODIAC[0]
-
-def get_chinese_zodiac(year: int) -> dict:
-    index = (year - 1900) % 12
-    return CHINESE_ZODIAC[index]
-
-def describe_age(age):
-    parts = []
-    if age["years"]:
-        parts.append(f'{to_arabic_digits(age["years"])} سنة')
-    if age["months"]:
-        parts.append(f'{to_arabic_digits(age["months"])} شهر')
-    if age["days"]:
-        parts.append(f'{to_arabic_digits(age["days"])} يوم')
-    return "، ".join(parts) if parts else "0"
 
 def main(page: ft.Page):
-    page.title = "حاسبة العمر والبرج الفلكي"
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.window_width = 480
-    page.window_height = 850
-    page.bgcolor = "#f3f4f6"
+    """
+    Main function to build the Flet calculator application.
+    """
+    page.title = "Responsive Calculator"
+    # Align content to the start vertically and center horizontally for a modern look
+    page.vertical_alignment = ft.MainAxisAlignment.START
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.theme_mode = ft.ThemeMode.DARK  # Enable dark mode
+    page.window_width = 370  # Initial window width
+    page.window_height = 600  # Initial window height
+    page.window_resizable = True  # Allow window resizing for responsiveness
+    page.padding = 20  # Add padding around the content
+    page.bgcolor = ft.colors.BLUE_GREY_900  # Set a dark background color
 
-    year = ft.TextField(label="السنة", text_align=ft.TextAlign.RIGHT, autofocus=True)
-    month = ft.TextField(label="الشهر", text_align=ft.TextAlign.RIGHT)
-    day = ft.TextField(label="اليوم", text_align=ft.TextAlign.RIGHT)
-    result = ft.Column()
+    # --- Calculator Logic Variables ---
+    current_expression = ""  # Stores the full expression to be evaluated
+    current_display = "0"    # Stores the number currently shown on the display
+    clear_on_next_number = False # Flag to clear display when a number is pressed after an '=' or operator
 
-    def calculate(e):
-        result.controls.clear()
-        try:
-            y = int(year.value)
-            m = int(month.value)
-            d = int(day.value)
-            today = date.today()
-            birth_date = safe_birthdate(y, m, d)
-            if birth_date > today:
-                raise Exception("تاريخ الميلاد لا يمكن أن يكون في المستقبل.")
-            age = calculate_age_details(birth_date, today)
-            next_birthday = get_next_birthday(birth_date, today)
-            zodiac = get_zodiac_info(birth_date)
-            chinese = get_chinese_zodiac(y)
-
-            age_details = describe_age(age)
-            age_months = f"{to_arabic_digits(age['total_months'])} شهر"
-            age_days = f"{to_arabic_digits(age['total_days'])} يوم منذ الولادة"
-            age_weeks = f"{to_arabic_digits(age['total_weeks'])} أسبوع"
-            birth_date_text = format_date_ar(birth_date)
-            birth_day_name = f"كان يوم {AR_WEEKDAYS[birth_date.weekday()]}"
-            zodiac_text = f"{zodiac['name']} — العنصر: {zodiac['element']}، الكوكب الحاكم: {zodiac['planet']}"
-            zodiac_traits = zodiac["traits"]
-            chinese_text = f"برجك الصيني: {chinese['name']} — {chinese['traits']}"
-            days_until = (next_birthday - today).days
-            if days_until == 0:
-                next_birthday_text = (
-                    f"اليوم هو عيد ميلادك! 🎉 تكمل {to_arabic_digits(age['years'])} سنة"
-                )
-            else:
-                upcoming_age = age["years"] + 1
-                approx_weeks = max(1, days_until // 7)
-                next_birthday_text = (
-                    f"عيدك القادم: {format_date_ar(next_birthday)} — متبقٍ "
-                    f"{to_arabic_digits(days_until)} يوم (حوالي {to_arabic_digits(approx_weeks)} أسبوع). "
-                    f"ستبلغ {to_arabic_digits(upcoming_age)} سنة."
-                )
-
-            items = [
-                ft.Text("نتائجك الشخصية", size=26, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.RIGHT),
-                ft.Divider(),
-                ft.Text(f"تفاصيل العمر: {age_details}", text_align=ft.TextAlign.RIGHT),
-                ft.Text(f"إجمالي الأشهر: {age_months}", text_align=ft.TextAlign.RIGHT),
-                ft.Text(f"إجمالي الأيام: {age_days}", text_align=ft.TextAlign.RIGHT),
-                ft.Text(f"إجمالي الأسابيع: {age_weeks}", text_align=ft.TextAlign.RIGHT),
-                ft.Text(f"تاريخ الميلاد: {birth_date_text}", text_align=ft.TextAlign.RIGHT),
-                ft.Text(f"{birth_day_name}", text_align=ft.TextAlign.RIGHT),
-                ft.Text(f"البرج الغربي: {zodiac_text}", text_align=ft.TextAlign.RIGHT),
-                ft.Text(f"وصف البرج: {zodiac_traits}", text_align=ft.TextAlign.RIGHT),
-                ft.Text(f"{chinese_text}", text_align=ft.TextAlign.RIGHT),
-                ft.Text(f"{next_birthday_text}", text_align=ft.TextAlign.RIGHT),
-            ]
-            result.controls.extend(items)
-        except Exception as ex:
-            result.controls.append(ft.Text(f"خطأ في البيانات: {ex}", color="red", text_align=ft.TextAlign.RIGHT))
+    def update_display():
+        """
+        Updates the calculator's text field with the current_display value,
+        handling empty states and long numbers.
+        """
+        nonlocal current_display
+        if current_display == "":
+            result_field.value = "0" # Show '0' if display is empty
+        elif len(current_display) > 12: # Limit display length for readability
+            # Format large numbers to scientific notation
+            try:
+                result_field.value = f"{float(current_display):.7g}"
+            except ValueError: # In case of "Error" or invalid number
+                result_field.value = current_display
+        else:
+            result_field.value = current_display
         page.update()
 
-    btn = ft.ElevatedButton(text="احسب الآن", bgcolor=PRIMARY_COLOR, color="white", on_click=calculate)
-    page.add(
-        ft.Container(
-            content=ft.Column([
-                ft.Text("حاسبة العمر والبرج الفلكي", size=32, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.RIGHT),
-                ft.Text(
-                    "أدخل تاريخ ميلادك وسيتم عرض عمرك وجميع التفاصيل الفلكية مباشرة.",
-                    size=15, text_align=ft.TextAlign.RIGHT),
-                year,
-                month,
-                day,
-                btn,
-                ft.Divider(thickness=2),
-                result,
-            ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.END),
-            padding=26,
-            border_radius=ft.border_radius.all(16),
-            bgcolor="#ecf2ff"
-        )
+    def on_button_click(e):
+        """
+        Handles all button clicks and updates the calculator's state and display.
+        """
+        nonlocal current_expression, current_display, clear_on_next_number
+        button_text = e.control.text
+
+        if button_text == "C":  # Clear all
+            current_expression = ""
+            current_display = "0"
+            clear_on_next_number = False
+        elif button_text == "DEL":  # Delete last character
+            if current_display != "Error":
+                current_display = current_display[:-1]
+                if not current_display or current_display == "-":
+                    current_display = "0"
+        elif button_text == "=":
+            if current_expression and current_display and current_display != "Error":
+                try:
+                    # Append current display value to form the full expression
+                    full_expression = current_expression + current_display
+                    # Replace common double-operator mistakes for simpler eval
+                    full_expression = full_expression.replace('--', '+').replace('++', '+')
+                    # Use eval for calculation. Note: eval can be a security risk with untrusted input.
+                    # Here, input comes only from buttons, mitigating risk.
+                    result = str(eval(full_expression))
+                    current_display = result
+                    current_expression = result # Allow chaining operations from the result
+                    clear_on_next_number = True
+                except (SyntaxError, ZeroDivisionError):
+                    current_display = "Error"
+                    current_expression = ""
+                    clear_on_next_number = False
+                except Exception: # Catch any other unexpected calculation errors
+                    current_display = "Error"
+                    current_expression = ""
+                    clear_on_next_number = False
+            else:
+                # If '=' pressed with only a number, just display it as the result
+                current_expression = current_display
+                clear_on_next_number = True
+        elif button_text in ["+", "-", "*", "/"]:  # Operator buttons
+            if current_display != "Error":
+                # If current_expression already ends with an operator, replace it
+                if current_expression and current_expression.strip() and current_expression.strip()[-1] in ["+", "-", "*", "/"]:
+                    current_expression = current_expression[:-1] + button_text
+                else:
+                    # Only add current_display to expression if it's not the initial '0' or is part of a previous expression
+                    if current_display != "0" or current_expression:
+                        current_expression += current_display
+                    current_expression += button_text
+                current_display = "" # Clear display for the next number input
+                clear_on_next_number = False
+        elif button_text == ".":  # Decimal point
+            if current_display != "Error":
+                if clear_on_next_number or current_display == "0":
+                    current_display = "0."
+                    clear_on_next_number = False
+                elif "." not in current_display: # Add decimal only if not already present
+                    current_display += "."
+        else:  # Number buttons (0-9)
+            if current_display == "Error": # If previous operation resulted in error, start new
+                current_display = button_text
+                current_expression = ""
+            elif clear_on_next_number: # Clear display if last action was '=' or operator
+                current_display = button_text
+                clear_on_next_number = False
+            elif current_display == "0" and button_text != "0": # Replace initial '0' with new digit
+                current_display = button_text
+            elif current_display != "0" or button_text == "0": # Append digit to current number
+                current_display += button_text
+        
+        update_display()
+
+    # --- UI Elements ---
+
+    # Calculator display field
+    result_field = ft.TextField(
+        value=current_display,
+        text_align=ft.TextAlign.RIGHT,
+        read_only=True,  # Users cannot directly type into it
+        max_lines=1,
+        min_lines=1,
+        height=90,
+        content_padding=20,
+        border=ft.InputBorder.NONE,
+        text_style=ft.TextStyle(size=48, color=ft.colors.WHITE, weight=ft.FontWeight.BOLD),
+        bgcolor=ft.colors.BLUE_GREY_800,
+        border_radius=ft.border_radius.all(15),
+        expand=True, # Make it expand horizontally
     )
 
+    def create_button(text, color_scheme, col_span):
+        """
+        Helper function to create a calculator button with consistent styling.
+        :param text: The text displayed on the button.
+        :param color_scheme: "action", "operator", "equals", or "number" to determine button color.
+        :param col_span: How many Flet 'ResponsiveRow' columns this button should span (out of 12).
+        """
+        # Define colors based on the scheme
+        if color_scheme == "action": # C, DEL buttons
+            bgcolor = ft.colors.RED_600
+            hover_bgcolor = ft.colors.RED_500
+        elif color_scheme == "operator": # +, -, *, / buttons
+            bgcolor = ft.colors.ORANGE_500
+            hover_bgcolor = ft.colors.ORANGE_400
+        elif color_scheme == "equals": # = button
+            bgcolor = ft.colors.BLUE_600
+            hover_bgcolor = ft.colors.BLUE_500
+        else: # Number and decimal point buttons
+            bgcolor = ft.colors.BLUE_GREY_700
+            hover_bgcolor = ft.colors.BLUE_GREY_600
+
+        return ft.Container(
+            content=ft.ElevatedButton(
+                text=text,
+                on_click=on_button_click,
+                style=ft.ButtonStyle(
+                    shape=ft.RoundedRectangleBorder(radius=ft.border_radius.all(15)),
+                    bgcolor={
+                        ft.MaterialState.DEFAULT: bgcolor,
+                        ft.MaterialState.HOVERED: hover_bgcolor,
+                    },
+                    color=ft.colors.WHITE, # Text color
+                    text_style=ft.TextStyle(size=28, weight=ft.FontWeight.BOLD)
+                ),
+                elevation=2, # Add a subtle shadow
+                expand=True, # Make button fill its container
+            ),
+            col={
+                "xs": col_span
+            }, # Responsive column span
+            height=70, # Fixed height for buttons
+            padding=ft.padding.all(5) # Padding around each button
+        )
+
+    # Define the layout of calculator buttons using a list of controls
+    buttons_grid_controls = [
+        # Row 1
+        create_button("C", "action", 3),
+        create_button("DEL", "action", 3),
+        create_button("/", "operator", 3),
+        create_button("*", "operator", 3),
+
+        # Row 2
+        create_button("7", "number", 3),
+        create_button("8", "number", 3),
+        create_button("9", "number", 3),
+        create_button("-", "operator", 3),
+
+        # Row 3
+        create_button("4", "number", 3),
+        create_button("5", "number", 3),
+        create_button("6", "number", 3),
+        create_button("+", "operator", 3),
+
+        # Row 4 (1, 2, 3, .)
+        create_button("1", "number", 3),
+        create_button("2", "number", 3),
+        create_button("3", "number", 3),
+        create_button(".", "number", 3),
+
+        # Row 5 (0 and =) - 0 spans 2 columns, = spans 2 columns
+        create_button("0", "number", 6),  # "0" button takes 6 out of 12 columns (equivalent to 2 standard columns)
+        create_button("=", "equals", 6),  # "=" button takes 6 out of 12 columns (equivalent to 2 standard columns)
+    ]
+
+    # Add the result field and the button grid to the page
+    page.add(
+        ft.Column(
+            [
+                result_field,
+                ft.ResponsiveRow(
+                    buttons_grid_controls,
+                    run_spacing={
+                        "xs": 10
+                    }, # Vertical spacing between rows of buttons
+                    column_spacing={
+                        "xs": 10
+                    }, # Horizontal spacing between buttons in a row
+                )
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+            expand=True, # Make the main column expand to fill available height
+            spacing=10, # Space between the result field and the button grid
+        )
+    )
+    page.update() # Update the page to display all controls
+
+# Start the Flet application
 ft.app(target=main)
